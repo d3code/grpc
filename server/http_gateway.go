@@ -15,6 +15,7 @@ type HttpGateway struct {
     Host            string
     Port            string
     GrpcConnections map[string]GrpcConnection
+    HttpHandlers    map[string]http.Handler
 }
 
 type GrpcConnection struct {
@@ -32,7 +33,7 @@ func (i *GrpcConnection) Address() string {
 }
 
 // Run starts a HTTP gateway that serves the gRPC server
-func (g *HttpGateway) Run(grpcHost string, grpcPort string) {
+func (g *HttpGateway) Run() {
 
     // Create context
     ctx, cancel := context.WithCancel(context.Background())
@@ -40,6 +41,10 @@ func (g *HttpGateway) Run(grpcHost string, grpcPort string) {
 
     // Create HTTP handler
     mux := http.NewServeMux()
+
+    for p, httpHandler := range g.HttpHandlers {
+        mux.Handle(p, http.StripPrefix(p, httpHandler))
+    }
 
     // Create gRPC connections
     for p, grpcConnection := range g.GrpcConnections {
@@ -72,7 +77,8 @@ func (g *HttpGateway) Run(grpcHost string, grpcPort string) {
         pattern := path.Join(p + "/health")
         mux.HandleFunc(pattern, health)
 
-        mux.Handle(p, gateway)
+        //mux.Handle(p, gateway)
+        mux.Handle(p, removePathPrefix(p, gateway))
     }
 
     // Add middleware

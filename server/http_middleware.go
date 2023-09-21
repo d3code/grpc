@@ -19,6 +19,15 @@ func middlewareLog(next http.Handler) http.Handler {
     return http.HandlerFunc(handler)
 }
 
+// removePathPrefix removes the prefix from the request URL
+func removePathPrefix(prefix string, next http.Handler) http.Handler {
+    handler := func(w http.ResponseWriter, r *http.Request) {
+        r.URL.Path = r.URL.Path[len(prefix)-1:]
+        next.ServeHTTP(w, r)
+    }
+    return http.HandlerFunc(handler)
+}
+
 // middlewareCORS is a middlewareLog that adds CORS headers to the response if the Origin header is set
 func middlewareCORS(h http.Handler) http.Handler {
     interceptor := func(w http.ResponseWriter, r *http.Request) {
