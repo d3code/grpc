@@ -2,9 +2,11 @@ package server
 
 import (
     "context"
+    "crypto/tls"
     "github.com/d3code/zlog"
     "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
     "google.golang.org/grpc"
+    "google.golang.org/grpc/credentials"
     "google.golang.org/grpc/credentials/insecure"
     "google.golang.org/grpc/metadata"
     "net/http"
@@ -21,6 +23,7 @@ type HttpGateway struct {
 type GrpcConnection struct {
     Host         string
     Port         string
+    Secure       bool
     GrpcHandlers []func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error
 }
 
@@ -50,14 +53,22 @@ func (g *HttpGateway) Run() {
     for p, grpcConnection := range g.GrpcConnections {
 
         // Dial the gRPC server
-        conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(insecure.NewCredentials()))
-        //conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
-        if errDial != nil {
-            zlog.Log.Fatalf("Failed to dial server: %v", errDial)
+        var connection *grpc.ClientConn
+        if grpcConnection.Secure {
+            conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
+            if errDial != nil {
+                zlog.Log.Fatalf("Failed to dial server: %v", errDial)
+                continue
+            }
+            connection = conn
+        } else {
+            conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+            if errDial != nil {
+                zlog.Log.Fatalf("Failed to dial server: %v", errDial)
+                continue
+            }
+            connection = conn
         }
-
-        // Close the gRPC connection when the context is cancelled
-        go closeDoneContextGrpcConnection(ctx, conn)
 
         x := runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
             pairs := metadata.Pairs("x-user-id", "1")
@@ -67,14 +78,14 @@ func (g *HttpGateway) Run() {
         // Create gRPC handler
         gateway := runtime.NewServeMux(x)
         for _, grpcHandler := range grpcConnection.GrpcHandlers {
-            errRegister := grpcHandler(ctx, gateway, conn)
+            errRegister := grpcHandler(ctx, gateway, connection)
             if errRegister != nil {
                 return
             }
         }
 
         // Create Health handler
-        health := serverHealth(conn)
+        health := serverHealth(connection)
         pattern := path.Join(p + "/health")
         mux.HandleFunc(pattern, health)
 
