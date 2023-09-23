@@ -43,7 +43,7 @@ func (g *HttpGateway) Run() {
     mux := http.NewServeMux()
 
     for p, httpHandler := range g.HttpHandlers {
-        mux.Handle(p, http.StripPrefix(p, httpHandler))
+        mux.Handle(p, removePathPrefix(p, httpHandler))
     }
 
     // Create gRPC connections
@@ -51,6 +51,7 @@ func (g *HttpGateway) Run() {
 
         // Dial the gRPC server
         conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(insecure.NewCredentials()))
+        //conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
         if errDial != nil {
             zlog.Log.Fatalf("Failed to dial server: %v", errDial)
         }
