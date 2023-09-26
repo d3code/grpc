@@ -55,6 +55,7 @@ func (g *HttpGateway) Run() {
         // Dial the gRPC server
         var connection *grpc.ClientConn
         if grpcConnection.Secure {
+            zlog.Log.Warnf("Secure connection for path [%s] to %s", p, grpcConnection.Address())
             conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{InsecureSkipVerify: true})))
             if errDial != nil {
                 zlog.Log.Fatalf("Failed to dial server: %v", errDial)
@@ -62,6 +63,7 @@ func (g *HttpGateway) Run() {
             }
             connection = conn
         } else {
+            zlog.Log.Warnf("Insecure connection for path [%s] to %s", p, grpcConnection.Address())
             conn, errDial := grpc.DialContext(ctx, grpcConnection.Address(), grpc.WithTransportCredentials(insecure.NewCredentials()))
             if errDial != nil {
                 zlog.Log.Fatalf("Failed to dial server: %v", errDial)
@@ -70,6 +72,10 @@ func (g *HttpGateway) Run() {
             connection = conn
         }
 
+        // Close the gRPC connection when the context is cancelled
+        go closeDoneContextGrpcConnection(ctx, connection)
+
+        // Create metadata
         x := runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
             pairs := metadata.Pairs("x-user-id", "1")
             return pairs
