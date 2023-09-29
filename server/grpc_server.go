@@ -21,7 +21,7 @@ func (s *GrpcServer) Address() string {
 func (s *GrpcServer) Run() {
     listen, err := net.Listen("tcp", s.Address())
     if err != nil {
-        zlog.Log.Fatal("Failed to listen: ", err)
+        zlog.Log.Errorf("Failed to listen: %s", err)
     }
 
     x := grpc.UnaryInterceptor(serverInterceptor)
@@ -37,7 +37,7 @@ func (s *GrpcServer) Run() {
     zlog.Log.Infof("Starting gRPC server on %s", listen.Addr().String())
     err = server.Serve(listen)
     if err != nil {
-        zlog.Log.Fatalf("Failed to serve: %s", err)
+        zlog.Log.Errorf("Failed to serve: %s", err)
     }
 }
 
