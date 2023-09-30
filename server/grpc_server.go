@@ -48,9 +48,7 @@ func (s *GrpcServer) Run() {
 }
 
 func serverInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-
-    // Skip authorize when GetJWT is requested
-    zlog.Log.Infof("Request: %v", info.FullMethod)
+    zlog.Log.Infof("Request to [ %v ]", info.FullMethod)
 
     // Calls the handler
     h, err := handler(ctx, req)
