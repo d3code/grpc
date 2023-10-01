@@ -1,6 +1,6 @@
 module github.com/d3code/grpc
 
-go 1.21
+go 1.21.1
 
 require (
 	github.com/d3code/zlog v0.0.0-20230930052759-e8d58c011286
