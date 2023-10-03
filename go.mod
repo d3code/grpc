@@ -5,6 +5,7 @@ go 1.21.1
 require (
 	github.com/d3code/zlog v0.0.0-20230930052759-e8d58c011286
 	github.com/golang/glog v1.1.2
+	github.com/google/uuid v1.3.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0
 	google.golang.org/grpc v1.58.1
 )
