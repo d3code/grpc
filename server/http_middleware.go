@@ -16,21 +16,21 @@ func middlewareLog(next http.Handler) http.Handler {
         requestId := uuid.New().String()
         r.Header.Set("X-Request-Id", requestId)
 
-        //zlog.Log.Infow("Request received [ "+r.RequestURI+" ]",
-        //    "Request ID", requestId,
-        //    "Method", r.Method,
-        //    "URI", r.RequestURI,
-        //    "Protocol", r.Proto,
-        //    "Host", r.Host,
-        //    "Accept", r.Header.Get("Accept"),
-        //    "Accept encoding", r.Header.Get("Accept-Encoding"),
-        //    "Accept language", r.Header.Get("Accept-Language"),
-        //    "Content type", r.Header.Get("Content-Type"),
-        //    "Authorization", r.Header.Get("Authorization"),
-        //    "Content length", r.ContentLength,
-        //    "Remote address", r.RemoteAddr,
-        //    "User agent", r.UserAgent(),
-        //    "Referer", r.Referer())
+        zlog.Log.Infow("Request received [ "+r.RequestURI+" ]",
+            "Request ID", requestId,
+            "Method", r.Method,
+            "URI", r.RequestURI,
+            "Protocol", r.Proto,
+            "Host", r.Host,
+            "Accept", r.Header.Get("Accept"),
+            "Accept encoding", r.Header.Get("Accept-Encoding"),
+            "Accept language", r.Header.Get("Accept-Language"),
+            "Content type", r.Header.Get("Content-Type"),
+            "Authorization", r.Header.Get("Authorization"),
+            "Content length", r.ContentLength,
+            "Remote address", r.RemoteAddr,
+            "User agent", r.UserAgent(),
+            "Referer", r.Referer())
 
         next.ServeHTTP(w, r)
 

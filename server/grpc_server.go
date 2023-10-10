@@ -4,6 +4,7 @@ import (
     "context"
     "github.com/d3code/zlog"
     "google.golang.org/grpc"
+    "google.golang.org/grpc/metadata"
     "google.golang.org/grpc/reflection"
     "net"
 )
@@ -12,6 +13,7 @@ type GrpcServer struct {
     Host             string
     Port             string
     RegisterServices func(server *grpc.Server)
+    Interceptors     []grpc.ServerOption
 }
 
 func (s *GrpcServer) Address() string {
@@ -25,10 +27,11 @@ func (s *GrpcServer) Run() {
         return
     }
 
-    x := grpc.UnaryInterceptor(serverInterceptor)
+    middleware := []grpc.ServerOption{grpc.UnaryInterceptor(serverInterceptor)}
+    middleware = append(middleware, s.Interceptors...)
 
     // Create gRPC server
-    server := grpc.NewServer(x)
+    server := grpc.NewServer(middleware...)
     reflection.Register(server)
 
     // Register services
@@ -49,9 +52,18 @@ func (s *GrpcServer) Run() {
 
 func serverInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
     zlog.Log.Infof("Request to [ %v ]", info.FullMethod)
+    md, exists := metadata.FromIncomingContext(ctx)
+
+    if exists {
+        zlog.Log.Infof("Metadata: %+v", md)
+    }
+
+    zlog.Log.Infof("Request: %+v", req)
 
     // Calls the handler
     h, err := handler(ctx, req)
+
+    zlog.Log.Infof("Request to [ %v ] complete", info.FullMethod)
 
     return h, err
 }
