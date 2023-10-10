@@ -4,7 +4,6 @@ import (
     "context"
     "github.com/d3code/zlog"
     "google.golang.org/grpc"
-    "google.golang.org/grpc/metadata"
     "google.golang.org/grpc/reflection"
     "net"
 )
@@ -52,18 +51,9 @@ func (s *GrpcServer) Run() {
 
 func serverInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
     zlog.Log.Infof("Request to [ %v ]", info.FullMethod)
-    md, exists := metadata.FromIncomingContext(ctx)
-
-    if exists {
-        zlog.Log.Infof("Metadata: %+v", md)
-    }
-
-    zlog.Log.Infof("Request: %+v", req)
 
     // Calls the handler
     h, err := handler(ctx, req)
-
-    zlog.Log.Infof("Request to [ %v ] complete", info.FullMethod)
 
     return h, err
 }

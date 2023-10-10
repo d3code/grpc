@@ -18,19 +18,19 @@ func middlewareLog(next http.Handler) http.Handler {
 
         zlog.Log.Infow("Request received [ "+r.RequestURI+" ]",
             "Request ID", requestId,
-            "Method", r.Method,
-            "URI", r.RequestURI,
-            "Protocol", r.Proto,
-            "Host", r.Host,
-            "Accept", r.Header.Get("Accept"),
-            "Accept encoding", r.Header.Get("Accept-Encoding"),
-            "Accept language", r.Header.Get("Accept-Language"),
-            "Content type", r.Header.Get("Content-Type"),
-            "Authorization", r.Header.Get("Authorization"),
-            "Content length", r.ContentLength,
-            "Remote address", r.RemoteAddr,
-            "User agent", r.UserAgent(),
-            "Referer", r.Referer())
+            "method", r.Method,
+            "uri", r.RequestURI,
+            "protocol", r.Proto,
+            "host", r.Host,
+            "accept", r.Header.Get("Accept"),
+            "accept-encoding", r.Header.Get("Accept-Encoding"),
+            "accept-language", r.Header.Get("Accept-Language"),
+            "content-type", r.Header.Get("Content-Type"),
+            "authorization", r.Header.Get("Authorization"),
+            "content-length", r.ContentLength,
+            "remote-address", r.RemoteAddr,
+            "user-agent", r.UserAgent(),
+            "referer", r.Referer())
 
         next.ServeHTTP(w, r)
 
