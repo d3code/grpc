@@ -9,23 +9,29 @@ import (
 // middlewareLog logs the request URI and the time it took to process the request
 func middlewareLog(next http.Handler) http.Handler {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        zlog.Log.Debugw("Request [ "+r.RequestURI+" ]",
-            "method", r.Method,
-            "uri", r.RequestURI,
-            "protocol", r.Proto,
-            "host", r.Host,
-            "accept", r.Header.Get("Accept"),
-            "accept-encoding", r.Header.Get("Accept-Encoding"),
-            "accept-language", r.Header.Get("Accept-Language"),
-            "content-type", r.Header.Get("Content-Type"),
-            "authorization", r.Header.Get("Authorization"),
-            "content-length", r.ContentLength,
-            "remote-address", r.RemoteAddr,
-            "user-agent", r.UserAgent(),
-            "referer", r.Referer())
+
+        if r.Method != "OPTIONS" && !strings.HasPrefix(r.Host, "localhost") {
+            zlog.Log.Debugw("Request [ "+r.RequestURI+" ]",
+                "method", r.Method,
+                "uri", r.RequestURI,
+                "protocol", r.Proto,
+                "host", r.Host,
+                "accept", r.Header.Get("Accept"),
+                "accept-encoding", r.Header.Get("Accept-Encoding"),
+                "accept-language", r.Header.Get("Accept-Language"),
+                "content-type", r.Header.Get("Content-Type"),
+                "authorization", r.Header.Get("Authorization"),
+                "content-length", r.ContentLength,
+                "remote-address", r.RemoteAddr,
+                "user-agent", r.UserAgent(),
+                "referer", r.Referer())
+        } else {
+            zlog.Log.Debugf("Request [ %s %s ]", r.Method, r.RequestURI)
+        }
 
         next.ServeHTTP(w, r)
     }
+
     return http.HandlerFunc(handler)
 }
 
@@ -52,7 +58,6 @@ func middlewareCORS(h http.Handler) http.Handler {
                 w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
                 w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
 
-                zlog.Log.Debugf("Preflight request [ %s ]", r.URL.Path)
                 return
             }
         }
