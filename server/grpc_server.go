@@ -23,18 +23,15 @@ func (s *GrpcServer) Address() string {
 func (s *GrpcServer) Run() {
     listen, err := net.Listen("tcp", s.Address())
     if err != nil {
-        zlog.Log.Errorf("Failed to listen: %s", err)
+        zlog.Log.Fatalf("Failed to listen: %s", err)
         return
     }
 
     x := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-        zlog.Log.Infof("Request to [ %v ]", info.FullMethod)
+        zlog.Log.Infof("gRPC Request [ %v ]", info.FullMethod)
 
         if s.PreRequest != nil {
-            zlog.Log.Infof("Running pre-request middleware")
-
             resp, err = s.PreRequest(ctx, req, info, handler)
-
             if err != nil {
                 zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
                 return resp, err
@@ -49,9 +46,7 @@ func (s *GrpcServer) Run() {
         }
 
         if s.PostRequest != nil {
-            zlog.Log.Infof("Running post-request middleware")
             resp, err = s.PostRequest(ctx, req, info, handler)
-
             if err != nil {
                 zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
             }
@@ -69,7 +64,7 @@ func (s *GrpcServer) Run() {
     s.RegisterServices(server)
 
     if listen == nil || listen.Addr() == nil || server == nil {
-        zlog.Log.Errorf("Failed to listen or create server")
+        zlog.Log.Fatalf("Failed to listen or create server")
         return
     }
 
@@ -77,13 +72,6 @@ func (s *GrpcServer) Run() {
     zlog.Log.Infof("Starting gRPC server on %s", listen.Addr().String())
     err = server.Serve(listen)
     if err != nil {
-        zlog.Log.Errorf("Failed to serve: %s", err)
+        zlog.Log.Fatalf("Failed to serve: %s", err)
     }
-}
-
-func systemMiddleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-    zlog.Log.Infof("-- gRPC System request")
-
-    h, err := handler(ctx, req)
-    return h, err
 }

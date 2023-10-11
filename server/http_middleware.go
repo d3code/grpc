@@ -9,7 +9,7 @@ import (
 // middlewareLog logs the request URI and the time it took to process the request
 func middlewareLog(next http.Handler) http.Handler {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        zlog.Log.Infow("Request [ "+r.RequestURI+" ] received",
+        zlog.Log.Debugf("Request [ "+r.RequestURI+" ]",
             "method", r.Method,
             "uri", r.RequestURI,
             "protocol", r.Proto,
@@ -52,7 +52,7 @@ func middlewareCORS(h http.Handler) http.Handler {
                 w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
                 w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
 
-                zlog.Log.Infof("Preflight request for [ %s ]", r.URL.Path)
+                zlog.Log.Debugf("Preflight request [ %s ]", r.URL.Path)
                 return
             }
         }
