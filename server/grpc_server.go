@@ -12,7 +12,8 @@ type GrpcServer struct {
     Host             string
     Port             string
     RegisterServices func(server *grpc.Server)
-    Interceptors     []grpc.ServerOption
+    PreRequest       func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error)
+    PostRequest      func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error)
 }
 
 func (s *GrpcServer) Address() string {
@@ -26,11 +27,42 @@ func (s *GrpcServer) Run() {
         return
     }
 
-    middleware := []grpc.ServerOption{grpc.UnaryInterceptor(serverInterceptor)}
-    middleware = append(middleware, s.Interceptors...)
+    x := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+        zlog.Log.Infof("Request to [ %v ]", info.FullMethod)
+
+        if s.PreRequest != nil {
+            zlog.Log.Infof("Running pre-request middleware")
+
+            resp, err = s.PreRequest(ctx, req, info, handler)
+
+            if err != nil {
+                zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
+                return resp, err
+            }
+        }
+
+        h, err := handler(ctx, req)
+
+        if err != nil {
+            zlog.Log.Error(err)
+            return h, err
+        }
+
+        if s.PostRequest != nil {
+            zlog.Log.Infof("Running post-request middleware")
+            resp, err = s.PostRequest(ctx, req, info, handler)
+
+            if err != nil {
+                zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
+            }
+        }
+
+        return h, err
+    }
 
     // Create gRPC server
-    server := grpc.NewServer(middleware...)
+    interceptor := grpc.UnaryInterceptor(x)
+    server := grpc.NewServer(interceptor)
     reflection.Register(server)
 
     // Register services
@@ -49,11 +81,9 @@ func (s *GrpcServer) Run() {
     }
 }
 
-func serverInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-    zlog.Log.Infof("Request to [ %v ]", info.FullMethod)
+func systemMiddleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+    zlog.Log.Infof("-- gRPC System request")
 
-    // Calls the handler
     h, err := handler(ctx, req)
-
     return h, err
 }

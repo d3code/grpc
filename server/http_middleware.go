@@ -2,22 +2,14 @@ package server
 
 import (
     "github.com/d3code/zlog"
-    "github.com/google/uuid"
     "net/http"
     "strings"
-    "time"
 )
 
 // middlewareLog logs the request URI and the time it took to process the request
 func middlewareLog(next http.Handler) http.Handler {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        start := time.Now()
-
-        requestId := uuid.New().String()
-        r.Header.Set("X-Request-Id", requestId)
-
-        zlog.Log.Infow("Request received [ "+r.RequestURI+" ]",
-            "Request ID", requestId,
+        zlog.Log.Infow("Request [ "+r.RequestURI+" ] received",
             "method", r.Method,
             "uri", r.RequestURI,
             "protocol", r.Proto,
@@ -33,9 +25,6 @@ func middlewareLog(next http.Handler) http.Handler {
             "referer", r.Referer())
 
         next.ServeHTTP(w, r)
-
-        elapsed := time.Since(start)
-        zlog.Log.Infof("Request ID [ %s ] processed in %s", requestId, elapsed)
     }
     return http.HandlerFunc(handler)
 }

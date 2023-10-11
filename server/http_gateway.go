@@ -4,6 +4,7 @@ import (
     "context"
     "crypto/tls"
     "github.com/d3code/zlog"
+    "github.com/google/uuid"
     "github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
     "google.golang.org/grpc"
     "google.golang.org/grpc/credentials"
@@ -77,7 +78,7 @@ func (g *HttpGateway) Run() {
 
         // Create metadata
         x := runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
-            pairs := metadata.Pairs("x-user-id", "1")
+            pairs := metadata.Pairs("x-request-id", uuid.New().String())
             return pairs
         })
 
