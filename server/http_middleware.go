@@ -9,7 +9,7 @@ import (
 // middlewareLog logs the request URI and the time it took to process the request
 func middlewareLog(next http.Handler) http.Handler {
     handler := func(w http.ResponseWriter, r *http.Request) {
-        zlog.Log.Debugf("Request [ "+r.RequestURI+" ]",
+        zlog.Log.Debugw("Request [ "+r.RequestURI+" ]",
             "method", r.Method,
             "uri", r.RequestURI,
             "protocol", r.Proto,
