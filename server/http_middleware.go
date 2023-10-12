@@ -52,11 +52,15 @@ func middlewareCORS(h http.Handler) http.Handler {
             w.Header().Set("Access-Control-Allow-Origin", origin)
 
             if r.Method == "OPTIONS" && r.Header.Get("Access-Control-Request-Method") != "" {
-                headers := []string{"Content-Type", "Accept", "Authorization"}
+                headers := []string{"Content-Type", "Accept", "Authorization", "X-Access-Token", "X-Refresh-Token"}
                 methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE"}
 
                 w.Header().Set("Access-Control-Allow-Headers", strings.Join(headers, ","))
+                w.Header().Set("Access-Control-Expose-Headers", strings.Join(headers, ","))
+
                 w.Header().Set("Access-Control-Allow-Methods", strings.Join(methods, ","))
+
+                zlog.Log.Debug("CORS preflight request")
 
                 return
             }

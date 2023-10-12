@@ -10,9 +10,12 @@ import (
     "google.golang.org/grpc/credentials"
     "google.golang.org/grpc/credentials/insecure"
     "google.golang.org/grpc/metadata"
+    "google.golang.org/protobuf/proto"
     "net/http"
     "path"
 )
+
+const RequestIdHeaderName = "x-request-id"
 
 type HttpGateway struct {
     Host            string
@@ -26,6 +29,7 @@ type GrpcConnection struct {
     Port         string
     Secure       bool
     GrpcHandlers []func(context.Context, *runtime.ServeMux, *grpc.ClientConn) error
+    HttpHandlers map[string]http.Handler
 }
 
 func (g *HttpGateway) Address() string {
@@ -77,13 +81,31 @@ func (g *HttpGateway) Run() {
         go closeDoneContextGrpcConnection(ctx, connection)
 
         // Create metadata
-        x := runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
-            pairs := metadata.Pairs("x-request-id", uuid.New().String())
+        withMetadata := runtime.WithMetadata(func(ctx context.Context, req *http.Request) metadata.MD {
+            pairs := metadata.Pairs(RequestIdHeaderName, uuid.New().String())
             return pairs
         })
 
+        outgoingHeaderMatcher := runtime.WithOutgoingHeaderMatcher(func(key string) (string, bool) {
+            return key, key != "content-type"
+        })
+
+        option := func(ctx context.Context, writer http.ResponseWriter, message proto.Message) error {
+            if m, ok := metadata.FromOutgoingContext(ctx); ok {
+                req := m.Get(RequestIdHeaderName)
+                zlog.Log.Infof("Request ID: %v", req)
+                if len(req) > 0 {
+                    writer.Header().Set(RequestIdHeaderName, req[0])
+                }
+            }
+            return nil
+        }
+
+        forwardResponseOption := runtime.WithForwardResponseOption(option)
+
         // Create gRPC handler
-        gateway := runtime.NewServeMux(x)
+        gateway := runtime.NewServeMux(outgoingHeaderMatcher, forwardResponseOption, withMetadata)
+
         for _, grpcHandler := range grpcConnection.GrpcHandlers {
             errRegister := grpcHandler(ctx, gateway, connection)
             if errRegister != nil {

@@ -12,8 +12,8 @@ type GrpcServer struct {
     Host             string
     Port             string
     RegisterServices func(server *grpc.Server)
-    PreRequest       func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error)
-    PostRequest      func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error)
+    PreRequest       func(ctx context.Context, req any, info *grpc.UnaryServerInfo) (err error)
+    PostRequest      func(ctx context.Context, req any, info *grpc.UnaryServerInfo) (err error)
 }
 
 func (s *GrpcServer) Address() string {
@@ -31,7 +31,7 @@ func (s *GrpcServer) Run() {
         zlog.Log.Infof("gRPC Request [ %v ]", info.FullMethod)
 
         if s.PreRequest != nil {
-            resp, err = s.PreRequest(ctx, req, info, handler)
+            err = s.PreRequest(ctx, req, info)
             if err != nil {
                 zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
                 return resp, err
@@ -46,9 +46,9 @@ func (s *GrpcServer) Run() {
         }
 
         if s.PostRequest != nil {
-            resp, err = s.PostRequest(ctx, req, info, handler)
+            err = s.PostRequest(ctx, req, info)
             if err != nil {
-                zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
+                zlog.Log.Errorf("Error in post-request middleware: %s", err.Error())
             }
         }
 
