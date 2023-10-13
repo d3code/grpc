@@ -33,7 +33,7 @@ func (s *GrpcServer) Run() {
         if s.PreRequest != nil {
             err = s.PreRequest(ctx, req, info)
             if err != nil {
-                zlog.Log.Errorf("Error in pre-request middleware: %s", err.Error())
+                zlog.Log.Error(err)
                 return resp, err
             }
         }
@@ -48,7 +48,7 @@ func (s *GrpcServer) Run() {
         if s.PostRequest != nil {
             err = s.PostRequest(ctx, req, info)
             if err != nil {
-                zlog.Log.Errorf("Error in post-request middleware: %s", err.Error())
+                zlog.Log.Error(err)
             }
         }
 
