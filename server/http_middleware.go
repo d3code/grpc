@@ -10,6 +10,8 @@ import (
 func middlewareLog(next http.Handler) http.Handler {
     handler := func(w http.ResponseWriter, r *http.Request) {
 
+        zlog.Log.Infof("Request cookies: %v", r.Cookies())
+
         if r.Method != "OPTIONS" && !strings.HasPrefix(r.Host, "localhost") {
             zlog.Log.Debugw("Request [ "+r.RequestURI+" ]",
                 "method", r.Method,
